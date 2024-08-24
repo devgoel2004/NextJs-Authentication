@@ -5,7 +5,7 @@ import bcryptjs from "bcryptjs";
 export const sendEmail = async ({ email, emailType, userId }: any) => {
   try {
     const hashedToken = await bcryptjs.hash(userId.toString(), 10);
-
+    console.log(email);
     if (emailType === "VERIFY") {
       await User.findByIdAndUpdate(userId, {
         verifyToken: hashedToken,
@@ -17,14 +17,27 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
         forgotPasswordTokenExpiry: Date.now() + 3600000,
       });
     }
+    console.log(hashedToken);
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.USER_PASSWORD,
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
+    const mailOptions = {
+      from: "devgoel901@gmail.com",
+      to: email,
+      subject:
+        emailType === "VERIFY" ? "Verify Your email" : "Reset Your Password",
+      html: `<p>Click <a href="${process.env.DOMAIN}">here</a> to ${
+        emailType === "VERIFY" ? "verify your email" : "reset your password"
+      }, <br> ${process.env.DOMAIN}/verifyemail?token=${hashedToken}</p>`,
+    };
+    const mail = await transporter.sendMail(mailOptions);
+    console.log(mail);
   } catch (error: any) {
+    console.log(error.message);
     throw new Error(error.message);
   }
 };
